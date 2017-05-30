@@ -1,0 +1,207 @@
+#!/usr/bin/env python
+#title           :columnizeINsite.py
+#description     :This application columnizes a CDEE Demographic files ICES to IEDSS.
+#author          :Nate Novicki
+#date            :July 2016
+#Python version  :Python2.7
+
+import os
+import os.path
+import filecmp
+import sys
+import csv
+
+''' File 1 '''
+f1Look = ''
+''' File 2 '''
+f2Look = ''
+''' Directory location '''
+loc = ''
+
+
+''' main function to allow simple flow of control with any code adjustments '''
+def main():
+
+
+    quickComp()
+
+
+### QuickComp does most of the actual file comparison ###
+def quickComp():
+
+# First we find our directory (see fileNav)
+    fileNav(loc)
+
+# Prompt the user for the name of the file they are
+# looking for then run f1Finder to verify the file exists.
+    print ('Input IEDSS file name'+'\n'+'                    ***WARNING***'+
+          '\n'+"Don't forget to include file extensions! (i.e. .txt, .docx, .dat)"+'\n')
+    f1Finder()
+
+# Prompt the user for the name of the file they are
+# looking for then run f2Finder to verify the file exists.
+    print ('Input ICES file name'+'\n'+'                    ***WARNING***'+
+          '\n'+"Don't forget to include file extensions! (i.e. .txt, .docx, .dat)"+'\n')
+    f2Finder()
+
+### Columnize ###
+
+    columnize()
+    
+    restartProg()
+
+    
+### FileNav simply ensures you are using a directory that exists ###
+def fileNav(loc):
+    print('--------------------------------------------------------------------------------')
+    print('\n'+'Please input the file path to the files you wish'+
+          ' to columnize:'+'\n')
+
+    dirSel = raw_input()
+    #dirSel='C:\Users\NNOVICKI\Desktop\fieldCheck\FileRepo' # Clever users will notice a variable can
+    #                                               be used to cut time typing the dirctory name.
+    if not os.path.exists(dirSel):
+        print ('\n'+'Directory not found.'+'\n'+'Try Again.'+'\n')
+        quickComp()
+    print ('\n'+'Navigated to '+str(dirSel)+'\n')
+
+    conArray = os.listdir(dirSel)
+        
+    print('Files in directory '+str(dirSel)+':')
+    for index in range(len(conArray)):
+        print(conArray[index])
+    print('\n')
+
+    loc = os.chdir(dirSel)
+    return loc
+
+### f1Finder and f2Finder both make sure the user is comparing actual files ###
+def f1Finder():
+    global f1Look
+    f1Look = raw_input()
+    fThere = os.path.isfile(f1Look)
+    if not os.path.exists(f1Look):
+        print ('File could not be found. Try Again.'+'\n')
+        f1Finder()
+    print ('IEDSS File: '+str(f1Look)+'\n')
+def f2Finder():
+    global f2Look
+    f2Look = raw_input()
+    fThere2 = os.path.isfile(f2Look)
+    if not os.path.exists(f2Look):
+        print ('File could not be found. Try Again.'+'\n')
+        f2Finder()
+    print ('ICES File: '+str(f2Look)+'\n')
+
+
+### Restart function ###
+def restartProg():
+    again = raw_input('\n'+'\n'+'Compare more files? Enter y/n: '+'\n')
+
+    if again == 'n':
+        exit()
+    elif again == 'y':
+        quickComp()
+    else:
+        print ('You should enter either \"y\" or \"n\".'+'\n')
+        restartProg()
+
+def columnize():
+
+    perfNum = 0
+    badNum = 0
+
+    
+    fileName = raw_input('Input name for file'+'\n')
+    fieldName = []
+    fieldName2 = []
+    startArray = []
+    endArray = []
+    fieldNum = len(startArray)
+
+    dataArray = []
+    dataArray2 = []
+    table = []
+    
+    f = open(f1Look,'r')
+    f2 = open(f2Look,'r')
+
+
+    for line in f:
+        dataArray.append(line)
+
+    for line in f2:
+        dataArray2.append(line)    
+
+    try:
+        for index in range(len(dataArray)):
+            for i in range(fieldNum):
+                field = fieldName[i]
+                field2 = fieldName2[i]
+
+                start = startArray[i]
+                end = endArray [i]
+                findIt = dataArray[index][int(start):int(end)]
+                findIt2 = dataArray2[index][int(start):int(end)]
+                if findIt.lower() == findIt2.lower():
+                
+                   table.append([field]+['Length: '+str(len(findIt))]+[findIt]
+                             +['']+[field2]+['Length: '+str(len(findIt2))]+[findIt2])
+                   perfNum+=1
+                else:
+
+                
+                    table.append([field]+['Length: '+str(len(findIt))]+[findIt]
+                             +['']+[field2]+['Length: '+str(len(findIt2))]+[findIt2]+['***Difference***'])
+                    badNum+=1
+        with open(fileName, 'wb') as csvfile:
+            writer = csv.writer(csvfile)
+            [writer.writerow(r) for r in table]
+    except IndexError:
+        for index in range(len(dataArray2)):
+            
+            for i in range(fieldNum):
+                field = fieldName[i]
+                field2 = fieldName2[i]
+
+                start = startArray[i]
+                end = endArray [i]
+                findIt = dataArray[index][int(start):int(end)]
+                findIt2 = dataArray2[index][int(start):int(end)]
+                if findIt.lower() == findIt2.lower():
+                
+                   table.append([field]+['Length: '+str(len(findIt))]+[findIt]
+                             +['']+[field2]+['Length: '+str(len(findIt2))]+[findIt2])
+                   perfNum+=1
+                else:
+
+                
+                    table.append([field]+['Length: '+str(len(findIt))]+[findIt]
+                             +['']+[field2]+['Length: '+str(len(findIt2))]+[findIt2]+['***Difference***'])
+                    badNum+=1
+                
+        with open(fileName, 'wb') as csvfile:
+            writer = csv.writer(csvfile)
+            [writer.writerow(r) for r in table]
+            
+
+
+    f.close()
+    f2.close()
+    csvfile.close()
+    
+    print('-------------- Done ---------------'+'\n'+
+          fileName+' is in the FileRepo directory.'+'\n'+
+          'There were '+str(badNum)+' differences found.')
+   
+
+    respo = raw_input('Repeat? Enter y/n: '+'\n')
+    if respo == 'y':
+        columnize()
+    else:
+        restartProg()
+
+        
+### Standard Python boilerplate code ###    
+if __name__=='__main__':
+    main()
